@@ -16,4 +16,4 @@ async def simulate(request: Request) -> HTTPResponse:
 
 
 if __name__ == "__main__":
-    app.run(port=80)
+    app.run(debug=True)
