@@ -1,10 +1,18 @@
+import orjson
 import sanic
+import zstd
+from rs2simlib.fast import sim as fastsim
 from sanic import HTTPResponse
 from sanic import Request
 
-import sim
-
 app = sanic.Sanic(name="rs2sim-api")
+
+
+def dumps_gzip(data: dict) -> str:
+    return zstd.dumps(orjson.dumps(
+        data,
+        option=orjson.OPT_SERIALIZE_NUMPY,
+    ))
 
 
 @app.exception(Exception)
@@ -26,17 +34,28 @@ async def root(_) -> HTTPResponse:
 @app.post("/simulate")
 async def simulate(request: Request) -> HTTPResponse:
     sim_params = request.json
-    sim_x, sim_y = sim.simulate(
+    sim_x, sim_y = fastsim.simulate(
         sim_time=5.0,
         time_step=1 / 500,
+        drag_func=7,
+        ballistic_coeff=0.25,
         aim_dir_x=1.0,
         aim_dir_y=0.0,
     )
-    return sanic.json({
-        "x": list(sim_x),
-        "y": list(sim_y),
-    })
+    return sanic.json(
+        body={
+            "x": sim_x,
+            "y": sim_y,
+        },
+        headers={
+            "Content-Encoding": "zstd",
+        },
+        dumps=dumps_gzip,
+    )
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(
+        auto_reload=True,
+        debug=True,
+    )
