@@ -8,7 +8,7 @@ from sanic import Request
 app = sanic.Sanic(name="rs2sim-api")
 
 
-def dumps_gzip(data: dict) -> str:
+def dumps_zstd(data: dict) -> str:
     return zstd.dumps(orjson.dumps(
         data,
         option=orjson.OPT_SERIALIZE_NUMPY,
@@ -41,6 +41,9 @@ async def simulate(request: Request) -> HTTPResponse:
         ballistic_coeff=0.25,
         aim_dir_x=1.0,
         aim_dir_y=0.0,
+        muzzle_velocity=700.0 * 50,
+        start_loc_x=0.0,
+        start_loc_y=0.0,
     )
     return sanic.json(
         body={
@@ -50,7 +53,7 @@ async def simulate(request: Request) -> HTTPResponse:
         headers={
             "Content-Encoding": "zstd",
         },
-        dumps=dumps_gzip,
+        dumps=dumps_zstd,
     )
 
 
